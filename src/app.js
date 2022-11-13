@@ -64,7 +64,7 @@ class App {
   }
   
   onSelectNode = node => {
-    if (!node.path) return;
+    if (!node.path || node.children.length) return;
 
     if (node.path.indexOf('.js') > -1) {
       this.generateTree(node.path);
