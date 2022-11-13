@@ -540,97 +540,95 @@ var _micromodalDefault = parcelHelpers.interopDefault(_micromodal);
 var _uuid = require("uuid");
 var _path = require("path");
 var _pathDefault = parcelHelpers.interopDefault(_path);
-const fetchJSON = (url, cb)=>{
-    fetch(url, {
-        headers: {
-            "Authorization": `Bearer ${localStorage.getItem("codemapToken")}`
-        }
-    }).then((res)=>res.json()).then((res)=>{
-        if (res.message === "Not Found") return;
-        cb(atob(res.content));
-    }).catch((err)=>console.log(err));
-};
-(0, _micromodalDefault.default).show("modal-1", {
-    onClose: (modal)=>{
-        console.log(modal);
-        return;
+var _fetchJSON = require("./fetchJSON");
+var _fetchJSONDefault = parcelHelpers.interopDefault(_fetchJSON);
+class App {
+    constructor(id){
+        this.id = id;
+        this.rootDOM = document.querySelector(`#${id}`);
+        this.mind = null;
     }
-});
-const checkLogin = (cb)=>{
-    fetch("https://api.github.com/user", {
-        headers: {
-            "Authorization": `Bearer ${localStorage.getItem("codemapToken")}`
+    checkLogin = async (success)=>{
+        const res = await (0, _fetchJSONDefault.default)("https://api.github.com/user");
+        if (res.login) {
+            (0, _micromodalDefault.default).close("modal-1");
+            success();
         }
-    }).then((res)=>res.json()).then((res)=>{
-        if (res.message === "Not Found") return;
-        if (res.login) (0, _micromodalDefault.default).close("modal-1");
-        cb();
-    }).catch((err)=>console.log(err));
-};
-document.body.addEventListener("click", (e)=>{
-    if (e.target.classList.contains("login")) {
-        localStorage.setItem("codemapToken", document.querySelector("#token").value);
-        checkLogin(()=>{
-            document.querySelector("#map").classList.remove("hidden");
-            const mind = new (0, _mindElixirDefault.default)({
-                el: "#map"
-            });
-            let root = {
-                nodeData: {
-                    root: true,
+    };
+    onSelectNode = (node)=>{
+        if (!node.path) return;
+        if (node.path.indexOf(".js") > -1) this.generateTree(node.path);
+        else {
+            this.generateTree(node.path + ".js");
+            this.generateTree(node.path + "/index.js");
+        }
+    };
+    generateTree = async (url)=>{
+        let node = {
+            id: (0, _uuid.v4)(),
+            topic: "modules",
+            children: [
+                {
                     id: (0, _uuid.v4)(),
-                    topic: "react",
-                    children: [],
-                    path: "https://api.github.com/repos/facebook/react/contents/packages/react/index.js"
-                }
-            };
-            mind.init(root);
-            const generateTree = (url)=>{
-                let node = {
+                    topic: "external modules",
+                    children: []
+                },
+                {
                     id: (0, _uuid.v4)(),
-                    topic: "load",
-                    children: [
-                        {
-                            id: (0, _uuid.v4)(),
-                            topic: "external modules",
-                            children: []
-                        },
-                        {
-                            id: (0, _uuid.v4)(),
-                            topic: "internal modules",
-                            children: []
-                        }
-                    ]
-                };
-                fetchJSON(url, (res)=>{
-                    [
-                        ...res.matchAll(/from '(.+?)'/g)
-                    ].forEach((item)=>{
-                        const child = {
-                            id: (0, _uuid.v4)(),
-                            topic: item[1],
-                            children: [],
-                            path: (0, _pathDefault.default).resolve((0, _pathDefault.default).dirname(url), item[1]).slice(1)
-                        };
-                        if (item[1].charAt(0) === ".") node.children[1].children.push(child);
-                        else node.children[0].children.push(child);
-                    });
-                    mind.addChild(null, node);
-                });
-            };
-            mind.bus.addListener("selectNode", (node)=>{
-                if (!node.path) return;
-                if (node.path.indexOf(".js") > -1) generateTree(node.path);
-                else {
-                    generateTree(node.path + ".js");
-                    generateTree(node.path + "/index.js");
+                    topic: "internal modules",
+                    children: []
                 }
-            });
+            ]
+        };
+        const res = await (0, _fetchJSONDefault.default)(url);
+        const code = atob(res.content);
+        [
+            ...code.matchAll(/from '(.+?)'/g)
+        ].forEach((item)=>{
+            const child = {
+                id: (0, _uuid.v4)(),
+                topic: item[1],
+                children: [],
+                path: (0, _pathDefault.default).resolve((0, _pathDefault.default).dirname(url), item[1]).slice(1)
+            };
+            if (item[1].charAt(0) === ".") node.children[1].children.push(child);
+            else node.children[0].children.push(child);
         });
+        this.mind.addChild(null, node);
+    };
+    onSuccess = ()=>{
+        this.rootDOM.classList.remove("hidden");
+        const mind = new (0, _mindElixirDefault.default)({
+            el: `#${this.id}`
+        });
+        const root = {
+            nodeData: {
+                root: true,
+                id: (0, _uuid.v4)(),
+                topic: "react",
+                children: [],
+                path: "https://api.github.com/repos/facebook/react/contents/packages/react/index.js"
+            }
+        };
+        this.mind = mind;
+        mind.init(root);
+        mind.bus.addListener("selectNode", this.onSelectNode);
+    };
+    onLogin = (e)=>{
+        if (e.target.classList.contains("login")) {
+            localStorage.setItem("codemapToken", document.querySelector("#token").value);
+            this.checkLogin(this.onSuccess);
+        }
+    };
+    init() {
+        (0, _micromodalDefault.default).show("modal-1");
+        document.body.addEventListener("click", this.onLogin);
     }
-});
+}
+const app = new App("map");
+app.init();
 
-},{"mind-elixir":"9j5LO","micromodal":"cjhRo","uuid":"j4KJi","path":"loE3o","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9j5LO":[function(require,module,exports) {
+},{"mind-elixir":"9j5LO","micromodal":"cjhRo","uuid":"j4KJi","path":"loE3o","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./fetchJSON":"kegop"}],"9j5LO":[function(require,module,exports) {
 !function(e, t) {
     module.exports = t();
 }(self, function() {
@@ -3225,6 +3223,24 @@ process.umask = function() {
     return 0;
 };
 
-},{}]},["7Aums","bNKaB"], "bNKaB", "parcelRequire23e5")
+},{}],"kegop":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+const fetchJSON = (url)=>{
+    return new Promise((resolve, reject)=>{
+        fetch(url, {
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("codemapToken")}`
+            }
+        }).then((res)=>res.json()).then((res)=>{
+            if (res.message === "Not Found") reject("404");
+            // cb(atob(res.content));
+            resolve(res);
+        }).catch((err)=>reject(err));
+    });
+};
+exports.default = fetchJSON;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["7Aums","bNKaB"], "bNKaB", "parcelRequire23e5")
 
 //# sourceMappingURL=index.0641b553.js.map
