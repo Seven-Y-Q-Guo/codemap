@@ -21,17 +21,6 @@ class App {
     }
   }
   
-  onSelectNode = node => {
-    if (!node.path) return;
-
-    if (node.path.indexOf('.js') > -1) {
-      this.generateTree(node.path);
-    } else {
-      this.generateTree(node.path + '.js');
-      this.generateTree(node.path + '/index.js');
-    }
-  }
-  
   generateNode = (topic) => ({
     id: uuidv4(),
     topic,
@@ -72,6 +61,17 @@ class App {
   
   showMindmap = () => {
     this.rootDOM.classList.remove('hidden');
+  }
+  
+  onSelectNode = node => {
+    if (!node.path) return;
+
+    if (node.path.indexOf('.js') > -1) {
+      this.generateTree(node.path);
+    } else {
+      this.generateTree(node.path + '.js');
+      this.generateTree(node.path + '/index.js');
+    }
   }
   
   onSuccess = () => {
