@@ -579,15 +579,20 @@ class App {
         [
             ...code.matchAll(/from '(.+?)'/g)
         ].forEach((item)=>{
+            const { protocol , hostname , pathname  } = new URL(url);
+            const finalPath = protocol + "//" + hostname + "/" + (0, _pathDefault.default).resolve((0, _pathDefault.default).dirname(pathname), item[1]).slice(1);
             const child = {
                 ...this.generateNode(item[1]),
-                path: (0, _pathDefault.default).resolve((0, _pathDefault.default).dirname(url), item[1]).slice(1)
+                path: finalPath
             };
             if (item[1].charAt(0) === ".") node.children[1].children.push(child);
             else node.children[0].children.push(child);
         });
-        this.mind.addChild(null, node);
+        this.addNode(node);
     };
+    addNode(node) {
+        this.mind.addChild(null, node);
+    }
     showMindmap = ()=>{
         this.rootDOM.classList.remove("hidden");
     };
@@ -598,6 +603,8 @@ class App {
     onLogin = (e)=>{
         if (e.target.classList.contains("login")) {
             localStorage.setItem("codemapToken", document.querySelector("#token").value);
+            localStorage.setItem("codemapTopic", document.querySelector("#topic").value);
+            localStorage.setItem("codemapEntry", document.querySelector("#entry").value);
             this.checkLogin(this.onSuccess);
         }
     };
@@ -607,9 +614,9 @@ class App {
         });
         const root = {
             nodeData: {
-                ...this.generateNode("react"),
+                ...this.generateNode(localStorage.getItem("codemapTopic")),
                 root: true,
-                path: "https://api.github.com/repos/facebook/react/contents/packages/react/index.js"
+                path: localStorage.getItem("codemapEntry")
             }
         };
         this.mind = mind;
