@@ -6,9 +6,9 @@ import path from 'path';
 import fetchJSON from './fetchJSON';
 
 class App {
-  constructor(id) {
-    this.id = id;
-    this.rootDOM = document.querySelector(`#${id}`);
+  constructor(selector) {
+    this.selector = selector;
+    this.rootDOM = document.querySelector(selector);
     this.mind = null;
   }
   
@@ -32,29 +32,25 @@ class App {
     }
   }
   
+  generateNode = (topic) => ({
+    id: uuidv4(),
+    topic,
+    children: []
+  })
+  
   generateTree = async (url) => {
-    let node = {
-      id: uuidv4(),
-      topic: 'modules',
-      children: [{
-        id: uuidv4(),
-        topic: 'external modules',
-        children: []
-      }, {
-        id: uuidv4(),
-        topic: 'internal modules',
-        children: []
-      }]
-    };
+    let node = this.generateNode('modules');
+    node.children = [
+      this.generateNode('external modules'),
+      this.generateNode('internal modules')
+    ];
     
     const res = await fetchJSON(url);
     const code = atob(res.content);
 
     [...code.matchAll(/from '(.+?)'/g)].forEach(item => {
       const child = {
-        id: uuidv4(),
-        topic: item[1],
-        children: [],
+        ...this.generateNode(item[1]),
         path: path.resolve(path.dirname(url), item[1]).slice(1)
       };
 
@@ -68,25 +64,13 @@ class App {
     this.mind.addChild(null, node);
   }
   
-  onSuccess = () => {
+  showMindmap = () => {
     this.rootDOM.classList.remove('hidden');
-
-    const mind = new MindElixir({
-      el: `#${this.id}`
-    });
-    const root = {
-      nodeData: {
-        root: true,
-        id: uuidv4(),
-        topic: 'react',
-        children: [],
-        path: 'https://api.github.com/repos/facebook/react/contents/packages/react/index.js'
-      }
-    };
-
-    this.mind = mind;
-    mind.init(root);
-    mind.bus.addListener('selectNode', this.onSelectNode);
+  }
+  
+  onSuccess = () => {
+    this.showMindmap();
+    this.initMind();
   }
 
   onLogin = (e) => {
@@ -96,6 +80,23 @@ class App {
       this.checkLogin(this.onSuccess);
     }
   }
+  
+  initMind() {
+    const mind = new MindElixir({
+      el: this.selector
+    });
+    const root = {
+      nodeData: {
+        ...this.generateNode('react'),
+        root: true,
+        path: 'https://api.github.com/repos/facebook/react/contents/packages/react/index.js'
+      }
+    };
+
+    this.mind = mind;
+    mind.init(root);
+    mind.bus.addListener('selectNode', this.onSelectNode);
+  }
 
   init() {
     MicroModal.show('modal-1');
@@ -103,6 +104,6 @@ class App {
   }
 }
 
-const app = new App('map');
+const app = new App('#map');
 
 app.init();
