@@ -17,6 +17,20 @@ div {
   font-family: -apple-system,BlinkMacSystemFont,avenir next,avenir,helvetica neue,helvetica,ubuntu,roboto,noto,segoe ui,arial,sans-serif;
 }
 
+#token,
+#entry {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.full-width {
+  display: flex;
+}
+
+.full-width input:last-child {
+  flex: 1;
+}
+
 .modal__overlay {
   position: fixed;
   top: 0;
@@ -32,7 +46,7 @@ div {
 .modal__container {
   background-color: #fff;
   padding: 30px;
-  max-width: 500px;
+  width: 500px;
   max-height: 100vh;
   border-radius: 4px;
   overflow-y: auto;

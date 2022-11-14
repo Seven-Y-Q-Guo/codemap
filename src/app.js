@@ -13,7 +13,7 @@ class App {
   }
   
   checkLogin = async (success) => {
-    const res = await fetchJSON('https://api.github.com/user');
+    const res = await fetchJSON(`${localStorage.getItem('codemapApi')}/user`);
 
     if (res.login) {
       MicroModal.close('modal-1');
@@ -83,6 +83,7 @@ class App {
     if (e.target.classList.contains('login')) {
       localStorage.setItem('codemapToken', document.querySelector('#token').value);
       localStorage.setItem('codemapTopic', document.querySelector('#topic').value);
+      localStorage.setItem('codemapApi', document.querySelector('#api').value);
       localStorage.setItem('codemapEntry', document.querySelector('#entry').value);
 
       this.checkLogin(this.onSuccess);
@@ -93,11 +94,13 @@ class App {
     const mind = new MindElixir({
       el: this.selector
     });
+    const entryPath = localStorage.getItem('codemapEntry');
+    var [ , owner, repo, , , ...rest] = (new URL(entryPath)).pathname.split('/');
     const root = {
       nodeData: {
         ...this.generateNode(localStorage.getItem('codemapTopic')),
         root: true,
-        path: localStorage.getItem('codemapEntry')
+        path: `${localStorage.getItem('codemapApi')}/repos/${owner}/${repo}/contents/${rest.join('/')}`
       }
     };
 
