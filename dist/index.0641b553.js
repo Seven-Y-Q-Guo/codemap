@@ -549,7 +549,7 @@ class App {
         this.mind = null;
     }
     checkLogin = async (success)=>{
-        const res = await (0, _fetchJSONDefault.default)("https://api.github.com/user");
+        const res = await (0, _fetchJSONDefault.default)(`${localStorage.getItem("codemapApi")}/user`);
         if (res.login) {
             (0, _micromodalDefault.default).close("modal-1");
             success();
@@ -604,6 +604,7 @@ class App {
         if (e.target.classList.contains("login")) {
             localStorage.setItem("codemapToken", document.querySelector("#token").value);
             localStorage.setItem("codemapTopic", document.querySelector("#topic").value);
+            localStorage.setItem("codemapApi", document.querySelector("#api").value);
             localStorage.setItem("codemapEntry", document.querySelector("#entry").value);
             this.checkLogin(this.onSuccess);
         }
@@ -612,11 +613,13 @@ class App {
         const mind = new (0, _mindElixirDefault.default)({
             el: this.selector
         });
+        const entryPath = localStorage.getItem("codemapEntry");
+        var [, owner, repo, , , ...rest] = new URL(entryPath).pathname.split("/");
         const root = {
             nodeData: {
                 ...this.generateNode(localStorage.getItem("codemapTopic")),
                 root: true,
-                path: localStorage.getItem("codemapEntry")
+                path: `${localStorage.getItem("codemapApi")}/repos/${owner}/${repo}/contents/${rest.join("/")}`
             }
         };
         this.mind = mind;
